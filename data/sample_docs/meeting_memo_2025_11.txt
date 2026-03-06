@@ -1,0 +1,27 @@
+Meeting Memo — Infrastruktúra Review
+Dátum: 2025-11-14
+Résztvevők: IT vezető, Hálózati adminisztrátor, Fejlesztési vezető
+
+Napirend:
+1. VPN teljesítmény problémák vizsgálata
+2. Active Directory migráció státusz
+3. Backup rendszer felülvizsgálata
+
+1. VPN teljesítmény problémák
+A Schneider GmbH telephelyén a VPN kapcsolat instabillá vált november eleje óta.
+Diagnózis: az OpenVPN szerver nem tudja kezelni a párhuzamos 150+ kapcsolatot.
+Döntés: WireGuard-ra migrálunk Q1 2026-ban. Felelős: Hálózati adminisztrátor.
+Határidő: 2026-02-28.
+
+2. Active Directory migráció státusz
+A Müller & Partner KFT AD migrációja 80%-ban kész. Fennmaradó feladatok:
+- 3 legacy workstation GPO migrálása (felelős: IT csapat)
+- Exchange Online hibrid konfiguráció tesztelése
+- Felhasználói training az MFA bevezetéséhez
+Várható befejezés: 2025-12-15.
+
+3. Backup rendszer felülvizsgálata
+Veeam Backup jelenlegi verzió elavult (v11), frissítés szükséges v12-re.
+Backup tesztek eredménye: recovery time átlag 4.2 óra — cél 2 óra alá csökkenteni.
+Javasolt megoldás: Veeam v12 + Scale-out Backup Repository.
+Döntés: Jóváhagyva. Implementáció: 2026 Q1.

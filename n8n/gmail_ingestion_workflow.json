@@ -1,0 +1,88 @@
+{
+  "name": "Second Brain — Gmail Ingestion",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [{ "mode": "everyX", "value": 6, "unit": "hours" }]
+        },
+        "filters": {},
+        "options": {}
+      },
+      "name": "Gmail Trigger",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.from }}",
+              "operation": "notContains",
+              "value2": "noreply"
+            },
+            {
+              "value1": "={{ $json.from }}",
+              "operation": "notContains",
+              "value2": "newsletter"
+            }
+          ]
+        }
+      },
+      "name": "Filter Spam",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nreturn items.map(item => {\n  const email = item.json;\n  const fullText = `Tárgy: ${email.subject || ''}\nFeladó: ${email.from || ''}\nDátum: ${email.date || ''}\n\n${email.text || email.snippet || ''}`;\n  return {\n    json: {\n      text: fullText,\n      source: `Gmail: ${(email.subject || 'nincs tárgy').substring(0, 80)}`,\n      source_tag: 'gmail',\n      file_type: 'email'\n    }\n  };\n});"
+      },
+      "name": "Prepare Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [690, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:8000/ingest/text",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "Content-Type", "value": "application/json" }]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "text",       "value": "={{ $json.text }}" },
+            { "name": "source",     "value": "={{ $json.source }}" },
+            { "name": "source_tag", "value": "={{ $json.source_tag }}" },
+            { "name": "file_type",  "value": "={{ $json.file_type }}" }
+          ]
+        }
+      },
+      "name": "Send to Second Brain API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [910, 300]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.TELEGRAM_ALLOWED_USER_ID }}",
+        "text": "✅ Second Brain frissítve!\n📧 Betöltve: {{ $json.chunks_stored }} chunk\n📌 Forrás: {{ $json.source }}"
+      },
+      "name": "Telegram Értesítő",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [1130, 300]
+    }
+  ],
+  "connections": {
+    "Gmail Trigger":             { "main": [[{ "node": "Filter Spam",               "type": "main", "index": 0 }]] },
+    "Filter Spam":               { "main": [[{ "node": "Prepare Payload",           "type": "main", "index": 0 }]] },
+    "Prepare Payload":           { "main": [[{ "node": "Send to Second Brain API",  "type": "main", "index": 0 }]] },
+    "Send to Second Brain API":  { "main": [[{ "node": "Telegram Értesítő",         "type": "main", "index": 0 }]] }
+  }
+}

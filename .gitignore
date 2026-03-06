@@ -1,0 +1,44 @@
+# Environment & secrets
+.env
+*.env
+credentials.json
+token.json
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Data & state (don't commit personal documents!)
+data/processed_files.json
+data/sample_docs/*.pdf
+data/sample_docs/*.docx
+data/sample_docs/*.xlsx
+
+# Qdrant local storage (if mounted locally)
+qdrant_storage/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Temp
+tmp/
+*.tmp

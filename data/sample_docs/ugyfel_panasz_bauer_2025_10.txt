@@ -1,0 +1,25 @@
+Ügyfél: Bauer Logistics GmbH
+Kapcsolattartó: Thomas Bauer (t.bauer@bauer-logistics.de)
+Dátum: 2025-10-03
+Típus: Ügyfél panasz — Kritikus
+
+Tárgy: VMware ESXi host leállt — teljes production kiesés
+
+Leírás:
+A Bauer Logistics raktárkezelő rendszere (WMS) teljesen leállt 2025-10-03 08:15-kor.
+Az ESXi 7.0 host kernel panicot dobott a storage controller driver frissítés után.
+Érintett VM-ek: WMS-PROD-01, WMS-PROD-02, DB-SERVER-01
+
+Diagnózis lépései:
+1. iDRAC konzolhoz csatlakozás → kernel panic log azonosítva
+2. LSI storage controller driver visszaállítása korábbi verzióra (2.26.25.02 → 2.26.23.01)  
+3. ESXi host újraindítás → bootloop
+4. ESXi recovery mode → driver manuális eltávolítása
+5. Rendszer visszaállt 11:45-re (3,5 óra kiesés)
+
+Root cause: A HPE SPP csomag nem kompatibilis a VMware 7.0 U3e verzióval.
+Megoldás: Rollback + HPE kompatibilitási mátrix ellenőrzése frissítések előtt kötelező.
+
+Ügyfél elégedettsége: Alacsony. SLA 4 óra — teljesítve. Kompenzáció: 1 hónap support díj visszatérítve.
+
+Tanulság: Minden ESXi frissítés előtt kompatibilitási check és snapshot kötelező.

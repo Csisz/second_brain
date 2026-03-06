@@ -1,0 +1,98 @@
+{
+  "name": "Second Brain — Telegram Bot",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": ["message"],
+        "additionalFields": {}
+      },
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const msg = $input.item.json;\nconst userId = String(msg.message?.from?.id || '');\nconst allowedId = String(process.env.TELEGRAM_ALLOWED_USER_ID || '');\n\nif (userId !== allowedId) {\n  return [{ json: { authorized: false, chatId: msg.message?.chat?.id, reply: '⛔ Hozzáférés megtagadva.' } }];\n}\n\nconst text = msg.message?.text || '';\nreturn [{ json: { authorized: true, chatId: msg.message?.chat?.id, question: text } }];"
+      },
+      "name": "Auth Check",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [{ "value1": "={{ $json.authorized }}", "value2": true }]
+        }
+      },
+      "name": "Is Authorized?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [690, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:8000/query",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "Content-Type", "value": "application/json" }]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "question", "value": "={{ $json.question }}" },
+            { "name": "top_k",    "value": "6" }
+          ]
+        }
+      },
+      "name": "Query Second Brain",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [910, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "const result = $input.item.json;\nconst sources = (result.sources || []).join('\\n  • ');\nconst reply = result.answer + (sources ? `\\n\\n📎 Források:\\n  • ${sources}` : '');\nreturn [{ json: { reply, chatId: $('Auth Check').item.json.chatId } }];"
+      },
+      "name": "Format Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1130, 200]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text":   "={{ $json.reply }}",
+        "additionalFields": { "parse_mode": "Markdown" }
+      },
+      "name": "Send Answer",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [1350, 200]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "⛔ Hozzáférés megtagadva."
+      },
+      "name": "Send Denied",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [910, 420]
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": { "main": [[{ "node": "Auth Check",      "type": "main", "index": 0 }]] },
+    "Auth Check":       { "main": [[{ "node": "Is Authorized?",  "type": "main", "index": 0 }]] },
+    "Is Authorized?":   {
+      "main": [
+        [{ "node": "Query Second Brain", "type": "main", "index": 0 }],
+        [{ "node": "Send Denied",        "type": "main", "index": 0 }]
+      ]
+    },
+    "Query Second Brain": { "main": [[{ "node": "Format Reply", "type": "main", "index": 0 }]] },
+    "Format Reply":       { "main": [[{ "node": "Send Answer",  "type": "main", "index": 0 }]] }
+  }
+}
