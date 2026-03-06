@@ -33,13 +33,14 @@ class QueryResult:
     model: str
 
 
-def query(question: str, top_k: int = TOP_K) -> QueryResult:
+def query(question: str, top_k: int = TOP_K, allowed_collections: list[str] | None = None) -> QueryResult:
     """
     Kérdésre válaszol a tudásbázis alapján.
-    1. Vektorizálja a kérdést
-    2. Megkeresi a leginkább releváns chunk-okat
-    3. Claude-dal választ generál
+    allowed_collections: ha meg van adva, csak ezekből a source_tag-ekből keres.
+    None esetén minden kollekció elérhető (n8n / bot hívások).
     """
+    from qdrant_client.models import Filter, FieldCondition, MatchAny
+
     oai     = OpenAI()
     qdrant  = QdrantClient(
         host=os.getenv("QDRANT_HOST", "localhost"),
@@ -52,12 +53,32 @@ def query(question: str, top_k: int = TOP_K) -> QueryResult:
         model=EMBEDDING_MODEL, input=question
     ).data[0].embedding
 
-    # 2. Keresés a vektoros adatbázisban
+    # 2. Kollekció szűrő összerakása
+    query_filter = None
+    if allowed_collections is not None:
+        if len(allowed_collections) == 0:
+            return QueryResult(
+                answer="Nincs hozzáférése egyetlen kollekcióhoz sem.",
+                sources=[],
+                chunks_used=0,
+                model=CLAUDE_MODEL,
+            )
+        query_filter = Filter(
+            must=[
+                FieldCondition(
+                    key="source_tag",
+                    match=MatchAny(any=allowed_collections),
+                )
+            ]
+        )
+
+    # 3. Keresés a vektoros adatbázisban
     hits = qdrant.query_points(
         collection_name=COLLECTION,
         query=q_vec,
         limit=top_k,
         with_payload=True,
+        query_filter=query_filter,
     ).points
 
     if not hits:
