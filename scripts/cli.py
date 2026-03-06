@@ -84,11 +84,12 @@ def ingest_file(
 def sync_gmail(
     days: int = typer.Option(90, "--days", help="Hány napra visszamenve"),
     max_emails: int = typer.Option(500, "--max"),
+    recipient: str = typer.Option("viktor.huszar@user.hu", "--recipient", help="Csak erre a címre érkezett levelek"),
 ):
     """Gmail e-mailek szinkronizálása (első futtatáskor böngésző OAuth)."""
     from ingestion.gmail_reader import sync_gmail as _sync
-    con.print(f"\n[bold cyan]📧 Gmail szinkronizálás:[/] utóbbi {days} nap\n")
-    stats = _sync(days_back=days, max_emails=max_emails)
+    con.print(f"\n[bold cyan]📧 Gmail szinkronizálás:[/] utóbbi {days} nap, címzett: {recipient}\n")
+    stats = _sync(days_back=days, max_emails=max_emails, recipient=recipient)
     con.print(f"\n[green]✅ Gmail kész:[/] {stats}")
 
 

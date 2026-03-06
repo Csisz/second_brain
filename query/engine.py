@@ -53,12 +53,12 @@ def query(question: str, top_k: int = TOP_K) -> QueryResult:
     ).data[0].embedding
 
     # 2. Keresés a vektoros adatbázisban
-    hits = qdrant.search(
+    hits = qdrant.query_points(
         collection_name=COLLECTION,
-        query_vector=q_vec,
+        query=q_vec,
         limit=top_k,
         with_payload=True,
-    )
+    ).points
 
     if not hits:
         return QueryResult(
@@ -110,10 +110,23 @@ def get_collection_stats() -> dict:
     )
     try:
         info = qdrant.get_collection(COLLECTION)
+        # vectors_count vagy points_count — verziófüggő
+        count = getattr(info, "vectors_count", None) \
+             or getattr(info, "points_count", None) \
+             or info.config.params.vectors.size
         return {
             "collection":    COLLECTION,
-            "total_vectors": info.vectors_count,
+            "total_vectors": count,
             "status":        str(info.status),
         }
-    except Exception:
-        return {"collection": COLLECTION, "total_vectors": 0, "status": "not_found"}
+    except Exception as e:
+        # Próbáljuk meg a collection_info-val
+        try:
+            result = qdrant.count(collection_name=COLLECTION)
+            return {
+                "collection":    COLLECTION,
+                "total_vectors": result.count,
+                "status":        "green",
+            }
+        except Exception:
+            return {"collection": COLLECTION, "total_vectors": 0, "status": "not_found"}

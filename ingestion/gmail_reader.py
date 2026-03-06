@@ -64,19 +64,20 @@ def _parse_message(raw_msg: dict) -> dict | None:
     subject = headers.get("Subject", "(nincs tárgy)")
     sender  = headers.get("From", "")
     date    = headers.get("Date", "")
+    to      = headers.get("To", "") + headers.get("Cc", "")
     body    = _decode_body(raw_msg["payload"])
 
     if not body or len(body.strip()) < 30:
         return None
 
-    # Kombináljuk a metaadatokat a szöveggel a jobb kereshetőségért
-    full_text = f"Tárgy: {subject}\nFeladó: {sender}\nDátum: {date}\n\n{body}"
+    full_text = f"Tárgy: {subject}\nFeladó: {sender}\nCímzett: {to}\nDátum: {date}\n\n{body}"
 
     return {
         "text":     full_text,
         "source":   f"Gmail: {subject[:80]}",
         "subject":  subject,
         "sender":   sender,
+        "to":       to,
         "date":     date,
         "source_tag": "gmail",
         "file_type": "email",
@@ -88,18 +89,21 @@ def sync_gmail(
     days_back: int = 90,
     max_emails: int = 500,
     label: str = "INBOX",
+    recipient: str = "viktor.huszar@user.hu",
 ) -> dict:
     """
     Lekéri az utóbbi `days_back` nap e-mailjeit és betölti a KB-ba.
+    Csak a `recipient` címre érkezett leveleket tölti be.
     Visszaad egy összefoglaló dict-et.
     """
     service = _get_service()
     stats   = {"loaded": 0, "skipped": 0, "errors": 0}
 
     after_date = (datetime.now() - timedelta(days=days_back)).strftime("%Y/%m/%d")
-    query      = f"after:{after_date} -category:promotions -category:social"
+    # to: szűrő — csak a megadott címre érkezett levelek
+    query = f"after:{after_date} to:{recipient} -category:promotions -category:social"
 
-    print(f"[Gmail] Lekérés: utóbbi {days_back} nap, max {max_emails} e-mail...")
+    print(f"[Gmail] Lekérés: utóbbi {days_back} nap, címzett: {recipient}, max {max_emails} e-mail...")
     results = service.users().messages().list(
         userId="me", q=query, maxResults=max_emails, labelIds=[label]
     ).execute()
