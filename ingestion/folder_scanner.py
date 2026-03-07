@@ -23,7 +23,8 @@ from ingestion.file_readers import read_file
 SUPPORTED_EXTENSIONS = {
     ".txt", ".md", ".pdf", ".docx", ".doc",
     ".xlsx", ".xls", ".pptx", ".ppt",
-    ".csv", ".json", ".xml", ".html", ".htm",
+    ".csv", ".json", ".xml", 
+    # ".html", ".htm",
     ".py", ".js", ".ts", ".java", ".cs",
     ".eml", ".msg",
 }

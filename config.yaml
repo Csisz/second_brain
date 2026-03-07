@@ -1,0 +1,186 @@
+# =============================================================================
+# Second Brain — Központi Konfiguráció
+# =============================================================================
+# Másold ezt a fájlt és töltsd ki a saját értékeiddel.
+# Titkos értékek (jelszavak, API kulcsok) maradjanak a .env fájlban!
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Szerver / API
+# -----------------------------------------------------------------------------
+api:
+  host: "0.0.0.0"
+  port: 8000
+  url: "http://192.168.1.234:8000"      # Belső hálózati URL (n8n és UI használja)
+  cors_origins:                          # Engedélyezett CORS originek
+    - "http://localhost"
+    - "http://127.0.0.1"
+    - "http://192.168.1.234"
+
+# -----------------------------------------------------------------------------
+# Qdrant Vektoros Adatbázis
+# -----------------------------------------------------------------------------
+qdrant:
+  host: "127.0.0.1"
+  port: 6333
+  collection: "second_brain"
+  timeout: 60
+
+# -----------------------------------------------------------------------------
+# AI Modellek
+# -----------------------------------------------------------------------------
+ai:
+  embedding_model: "text-embedding-3-small"
+  embedding_dim: 1536
+  claude_model: "claude-sonnet-4-6"
+  max_tokens: 2048
+  top_k_results: 10                      # Hány vektort kérjünk le kereséskor
+
+# -----------------------------------------------------------------------------
+# PostgreSQL (Auth / RBAC)
+# -----------------------------------------------------------------------------
+postgres:
+  host: "localhost"
+  port: 5432
+  database: "second_brain"
+  user: "sbuser"
+  # password: .env-ből: POSTGRES_PASSWORD
+
+# -----------------------------------------------------------------------------
+# Gmail Szinkronizáció
+# -----------------------------------------------------------------------------
+gmail:
+  credentials_file: "credentials.json"
+  token_file: "token.json"
+  recipient: "viktor.huszar@gmail.com"   # A fiók amit szinkronizálunk
+  days_back: 365                          # Hány napra visszamenőleg
+  max_emails: 2000
+  exclude_labels:                         # Kizárt Gmail labelek
+    - "CATEGORY_PROMOTIONS"
+    - "CATEGORY_SOCIAL"
+    - "SPAM"
+
+  # Domain → source_tag mapping
+  domain_tags:
+    "egis.hu": "egis"
+    "yettel.hu": "yettel"
+    "telenor.hu": "telenor"
+    "telenor.dk": "telenor_dk"
+    "4ig.hu": "4ig"
+    "vodafone.hu": "4ig"
+    "one.hu": "4ig"
+    "vodafone.com": "4ig"
+    "mvmi.hu": "mvmi"
+
+# -----------------------------------------------------------------------------
+# NAS Mappák
+# -----------------------------------------------------------------------------
+nas:
+  base_path: "\\\\HuKo\\home\\Drive\\Backup\\HVHP23\\D\\Munka"
+  max_file_size_mb: 50
+  supported_extensions:
+    - ".txt"
+    - ".md"
+    - ".pdf"
+    - ".docx"
+    - ".doc"
+    - ".xlsx"
+    - ".xls"
+    - ".pptx"
+    - ".ppt"
+    - ".csv"
+    - ".json"
+    - ".xml"
+    - ".py"
+    - ".eml"
+    - ".msg"
+
+  folders:
+    - path: "\\\\HuKo\\home\\Drive\\Backup\\HVHP23\\D\\Munka\\Egis"
+      tag: "egis"
+    - path: "\\\\HuKo\\home\\Drive\\Backup\\HVHP23\\D\\Munka\\MVMI"
+      tag: "mvmi"
+    - path: "\\\\HuKo\\home\\Drive\\Backup\\HVHP23\\D\\Munka\\Extended ECM"
+      tag: "extended_ecm"
+    - path: "\\\\HuKo\\home\\Drive\\Backup\\HVHP23\\D\\Munka\\oscript"
+      tag: "oscript"
+    - path: "\\\\HuKo\\home\\Drive\\Backup\\HVHP23\\D\\Munka\\Telenor"
+      tag: "telenor"
+    - path: "\\\\HuKo\\home\\Drive\\Backup\\HVHP23\\D\\Munka\\Telenor_DK"
+      tag: "telenor_dk"
+    - path: "\\\\HuKo\\home\\Drive\\Backup\\HVHP23\\D\\Munka\\Vodafone"
+      tag: "4ig"
+    - path: "\\\\HuKo\\home\\Drive\\Backup\\HVHP23\\D\\Munka\\Yettel"
+      tag: "yettel"
+
+# -----------------------------------------------------------------------------
+# Rendszerparaméterek Excel (Google Sheets)
+# -----------------------------------------------------------------------------
+system_params:
+  google_sheets_id: "1wf_DlqY-Nj0PVjYGPpgKiY0O1h9nJFhgYnsWZlZZkV0"
+  local_excel_path: "\\\\HuKo\\home\\Drive\\Backup\\HVHP23\\D\\Munka\\Rendszerparaméterek_ALL.xlsx"
+  watch_interval_minutes: 30
+
+  sheet_tags:
+    "MVM": "mvmi"
+    "EGIS 16.2": "egis"
+    "EGIS 23.4": "egis"
+    "Vodafone": "4ig"
+    "Vodafone xECM": "extended_ecm"
+    "Yettel": "yettel"
+    "Telenor DK": "telenor_dk"
+    "Telenor régi": "telenor"
+
+# -----------------------------------------------------------------------------
+# Discord
+# -----------------------------------------------------------------------------
+discord:
+  allowed_user_id: "1357356468692586689"
+  channels:
+    general: "general"                   # Általános értesítések
+    alerts: "general"                    # Hibák, figyelmeztetések
+    briefing: "general"                  # Napi briefing
+  # bot_token: .env-ből: DISCORD_BOT_TOKEN
+  # webhook_url: .env-ből: DISCORD_WEBHOOK_URL
+
+# -----------------------------------------------------------------------------
+# n8n Workflows
+# -----------------------------------------------------------------------------
+n8n:
+  host: "localhost"
+  port: 5678
+  url: "http://localhost:5678"
+
+  schedules:
+    gmail_sync: "0 */6 * * *"           # 6 óránként
+    quality_check: "0 8 * * 1"          # Hétfő reggel 8
+    system_params_sync: "*/30 * * * *"  # 30 percenként
+
+# -----------------------------------------------------------------------------
+# RBAC — Felhasználói Jogosultságok
+# -----------------------------------------------------------------------------
+rbac:
+  default_role: "viewer"
+  admin_username: "admin"
+  jwt_expire_hours: 24
+
+  # Elérhető kollekciók listája
+  collections:
+    - "egis"
+    - "yettel"
+    - "telenor"
+    - "telenor_dk"
+    - "4ig"
+    - "mvmi"
+    - "extended_ecm"
+    - "oscript"
+    - "gmail"
+
+# -----------------------------------------------------------------------------
+# Logging
+# -----------------------------------------------------------------------------
+logging:
+  level: "INFO"                          # DEBUG / INFO / WARNING / ERROR
+  file: "logs/second_brain.log"
+  max_size_mb: 10
+  backup_count: 5
